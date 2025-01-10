@@ -1,10 +1,5 @@
-import {
-  Controller,
-  Get,
-  HttpException,
-  HttpStatus,
-  Post,
-} from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
+import { AuthService } from './auth.service';
 
 interface ResponseType {
   status: number;
@@ -14,31 +9,13 @@ interface ResponseType {
 
 @Controller('auth')
 export class AuthController {
+  constructor(private authService: AuthService) {}
   @Get('login')
   findAll(): ResponseType {
-    return {
-      status: 200,
-      message: 'Login success',
-      data: [],
-    };
+    return this.authService.login();
   }
   @Post('signup')
   create(): ResponseType {
-    const isError = true;
-    if (isError) {
-      throw new HttpException(
-        {
-          status: HttpStatus.FORBIDDEN,
-          error: 'Something went wrong!',
-        },
-        HttpStatus.FORBIDDEN,
-        { cause: isError },
-      );
-    }
-    return {
-      status: 200,
-      message: 'Signup success',
-      data: [],
-    };
+    return this.authService.signup();
   }
 }
