@@ -1,6 +1,6 @@
 import { IsArray, IsEmail, IsNotEmpty } from 'class-validator';
 export class CreateUserDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'First name is manadatory' })
   firstName: string;
 
   @IsNotEmpty()
@@ -12,7 +12,7 @@ export class CreateUserDto {
   @IsNotEmpty()
   password: string;
 
-  @IsArray()
-  @IsNotEmpty()
+  @IsArray({ message: 'Should Be an array' })
+  @IsNotEmpty({ message: 'Roles can not be empty' })
   roles: string[];
 }

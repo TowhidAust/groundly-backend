@@ -34,40 +34,29 @@ export class AuthService {
   }
   async signup(createUserDto: CreateUserDto): Promise<ResponseType> {
     try {
-      // check if email and password is provided correctly
-      if (createUserDto.email && createUserDto.password) {
-        // find if this user already exists
-        const isUserExists = await this.loginModel.findOne({
-          email: createUserDto.email,
-        });
+      // find if this user already exists
+      const isUserExists = await this.loginModel.findOne({
+        email: createUserDto.email,
+      });
 
-        if (isUserExists) {
-          throw new HttpException(
-            {
-              status: HttpStatus.FORBIDDEN,
-              message: 'The user already exists',
-            },
-            HttpStatus.FORBIDDEN,
-          );
-        }
-
-        // finally create the user if the user is new
-        const response = await this.loginModel.create(createUserDto);
-        if (response) {
-          return {
-            statusCode: 201,
-            message: 'Signup success',
-            data: response,
-          };
-        }
-      } else {
+      if (isUserExists) {
         throw new HttpException(
           {
             status: HttpStatus.FORBIDDEN,
-            message: 'Please provide correct email/password',
+            message: 'The user already exists',
           },
           HttpStatus.FORBIDDEN,
         );
+      }
+
+      // finally create the user if the user is new
+      const response = await this.loginModel.create(createUserDto);
+      if (response) {
+        return {
+          statusCode: 201,
+          message: 'Signup success',
+          data: response,
+        };
       }
     } catch (error) {
       if (error?.status === 403) {

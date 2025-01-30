@@ -3,6 +3,7 @@ import {
   Catch,
   ArgumentsHost,
   HttpException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
@@ -14,10 +15,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const status = exception.getStatus();
     const message = exception.message;
+    let details = [];
 
+    if (exception instanceof BadRequestException) {
+      const responseBody = exception.getResponse();
+      if (typeof responseBody === 'object' && responseBody['message']) {
+        details = responseBody['message']; // Get formatted validation errors
+      }
+    }
     response.status(status).json({
       statusCode: status,
-      message: message,
+      message,
+      details,
       timestamp: new Date().toISOString(),
       path: request.url,
     });
