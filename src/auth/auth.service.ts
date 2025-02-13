@@ -3,6 +3,7 @@ import {
   HttpStatus,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
@@ -23,6 +24,7 @@ export class AuthService {
       const loggedInUser = await this.loginModel
         .findOne({ email: loginUserDto.email, password: loginUserDto.password })
         .exec();
+      // generate tokens
       const accessToken = await this.jwtService.signAsync({
         id: loggedInUser._id.toString(),
       });
@@ -37,7 +39,6 @@ export class AuthService {
       }
       throw new Error('Incorrect credentials');
     } catch (error) {
-      console.log(error);
       if (error) {
         throw new NotFoundException('Incorrect credentials');
       }
@@ -77,6 +78,34 @@ export class AuthService {
         'Something went wrong',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  async generateTokens(payload: { userId: string; email: string }) {
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_SECRET_ACCESS_TOKEN,
+      expiresIn: process.env.JWT_ACCESS_EXPIRES,
+    });
+
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_SECRET_REFRESH_TOKEN,
+      expiresIn: process.env.JWT_REFRESH_EXPIRES,
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  async generateRefreshToken(token: string) {
+    try {
+      const decoded = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET_REFRESH_TOKEN,
+      });
+      const { userId, email } = decoded;
+      return this.generateTokens({ userId, email });
+    } catch (error) {
+      if (error) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
     }
   }
 }
