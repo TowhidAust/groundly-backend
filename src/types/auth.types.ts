@@ -3,4 +3,5 @@ export interface ResponseType {
   message: string;
   data: any;
   accessToken?: string;
+  refreshToken?: string;
 }

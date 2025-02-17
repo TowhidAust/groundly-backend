@@ -12,6 +12,7 @@ import { ResponseType } from 'src/types';
 import { CreateUserDto } from './create-user.dto';
 import { LoginUserDto } from './login-user-dto';
 import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
 @Injectable()
 export class AuthService {
   constructor(
@@ -19,14 +20,26 @@ export class AuthService {
     private loginModel: mongoose.Model<User>,
     private jwtService: JwtService,
   ) {}
-  async login(loginUserDto: LoginUserDto): Promise<ResponseType> {
+  async login(
+    loginUserDto: LoginUserDto,
+    res: Response,
+  ): Promise<ResponseType> {
     try {
       const loggedInUser = await this.loginModel
         .findOne({ email: loginUserDto.email, password: loginUserDto.password })
         .exec();
       // generate tokens
-      const accessToken = await this.jwtService.signAsync({
-        id: loggedInUser._id.toString(),
+      const { accessToken, refreshToken } = await this.generateTokens({
+        userId: loggedInUser._id.toString(),
+        email: loggedInUser.email,
+      });
+      // Set refresh token as a secure, HttpOnly cookie
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true, // Use HTTPS in production
+        sameSite: 'strict',
+        path: '/auth/refresh', // Restrict cookie usage to this endpoint
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
       // match the password is ok or not
       if (loggedInUser) {
@@ -35,15 +48,18 @@ export class AuthService {
           message: 'Successfully logged in',
           data: loggedInUser,
           accessToken,
+          refreshToken,
         };
       }
-      throw new Error('Incorrect credentials');
+      // throw new Error('Incorrect credentials');
     } catch (error) {
+      console.log(error);
       if (error) {
         throw new NotFoundException('Incorrect credentials');
       }
     }
   }
+
   async signup(createUserDto: CreateUserDto): Promise<ResponseType> {
     try {
       // find if this user already exists

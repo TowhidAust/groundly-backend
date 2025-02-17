@@ -19,8 +19,11 @@ import { Request, Response } from 'express';
 export class AuthController {
   constructor(private authService: AuthService) {}
   @Post('login')
-  async find(@Body() loginUser: LoginUserDto): Promise<ResponseType> {
-    return this.authService.login(loginUser);
+  async find(
+    @Body() loginUser: LoginUserDto,
+    @Res() res: Response,
+  ): Promise<ResponseType> {
+    return this.authService.login(loginUser, res);
   }
   @Post('signup')
   async create(@Body() createUser: CreateUserDto): Promise<ResponseType> {
