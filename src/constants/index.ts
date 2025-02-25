@@ -1,0 +1,5 @@
+export const USER_ROLES = {
+  CUSTOMER: 'CUSTOMER',
+  FIELD_OWNER: 'FIELD_OWNER',
+  ADMIN: 'SUPER_ADMIN',
+};

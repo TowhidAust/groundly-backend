@@ -1,11 +1,13 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Req,
   Res,
   UnauthorizedException,
   UseFilters,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ResponseType } from 'src/types';
@@ -13,6 +15,7 @@ import { CreateUserDto } from './create-user.dto';
 import { HttpExceptionFilter } from 'src/exception-filters/http-exception.filter';
 import { LoginUserDto } from './login-user-dto';
 import { Request, Response } from 'express';
+import { AuthGuard } from './auth.guard';
 
 @UseFilters(new HttpExceptionFilter())
 @Controller('auth')
@@ -26,8 +29,11 @@ export class AuthController {
     return this.authService.login(loginUser, res);
   }
   @Post('signup')
-  async create(@Body() createUser: CreateUserDto): Promise<ResponseType> {
-    return this.authService.signup(createUser);
+  async create(
+    @Body() createUser: CreateUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ResponseType> {
+    return this.authService.signup(createUser, res);
   }
   @Post('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
@@ -48,5 +54,13 @@ export class AuthController {
     });
 
     return res.json({ accessToken: tokens.accessToken });
+  }
+  @UseGuards(AuthGuard)
+  @Get('profile')
+  getProfile(@Req() req: Request) {
+    return {
+      status: 200,
+      message: 'Successfully got profile',
+    };
   }
 }

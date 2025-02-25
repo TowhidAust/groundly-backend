@@ -67,7 +67,10 @@ export class AuthService {
     }
   }
 
-  async signup(createUserDto: CreateUserDto): Promise<ResponseType> {
+  async signup(
+    createUserDto: CreateUserDto,
+    res: Response,
+  ): Promise<ResponseType> {
     try {
       // find if this user already exists
       const isUserExists = await this.loginModel.findOne({
@@ -85,12 +88,35 @@ export class AuthService {
       }
 
       // finally create the user if the user is new
-      const response = await this.loginModel.create(createUserDto);
-      if (response) {
+      const createdUser = await this.loginModel.create(createUserDto);
+      if (!createdUser) {
+        throw new HttpException(
+          'Something went wrong!',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      // generate token
+      const { accessToken, refreshToken } = await this.generateTokens({
+        userId: createdUser?._id?.toString(),
+        email: createdUser?.email,
+      });
+      // Set refresh token as a secure, HttpOnly cookie
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true, // Use HTTPS in production
+        sameSite: 'strict',
+        path: '/auth/refresh', // Restrict cookie usage to this endpoint
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+      const userObj = createdUser.toObject();
+      delete userObj.password;
+      if (createdUser) {
         return {
           statusCode: 201,
           message: 'Signup success',
-          data: response,
+          data: userObj,
+          accessToken,
+          refreshToken,
         };
       }
     } catch (error) {
