@@ -21,7 +21,7 @@ export class AuthController {
   @Post('login')
   async find(
     @Body() loginUser: LoginUserDto,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<ResponseType> {
     return this.authService.login(loginUser, res);
   }

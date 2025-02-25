@@ -26,12 +26,20 @@ export class AuthService {
   ): Promise<ResponseType> {
     try {
       const loggedInUser = await this.loginModel
-        .findOne({ email: loginUserDto.email, password: loginUserDto.password })
+        .findOne({
+          email: loginUserDto.email,
+          password: loginUserDto.password,
+        })
         .exec();
+      if (!loggedInUser) {
+        throw new NotFoundException('Incorrect credentials');
+      }
+      const userObject = loggedInUser.toObject();
+      delete userObject.password;
       // generate tokens
       const { accessToken, refreshToken } = await this.generateTokens({
-        userId: loggedInUser._id.toString(),
-        email: loggedInUser.email,
+        userId: loggedInUser?._id?.toString(),
+        email: loggedInUser?.email,
       });
       // Set refresh token as a secure, HttpOnly cookie
       res.cookie('refreshToken', refreshToken, {
@@ -42,18 +50,17 @@ export class AuthService {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
       // match the password is ok or not
-      if (loggedInUser) {
+      if (loggedInUser && loginUserDto.password === loggedInUser.password) {
         return {
           statusCode: 200,
           message: 'Successfully logged in',
-          data: loggedInUser,
+          data: userObject,
           accessToken,
           refreshToken,
         };
       }
       // throw new Error('Incorrect credentials');
     } catch (error) {
-      console.log(error);
       if (error) {
         throw new NotFoundException('Incorrect credentials');
       }

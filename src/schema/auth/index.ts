@@ -8,7 +8,7 @@ export class User {
   @Prop() firstName: string;
   @Prop() lastName: string;
   @Prop() email: string;
-  @Prop() password: number;
+  @Prop() password: string;
   @Prop() roles: string[];
 }
 
