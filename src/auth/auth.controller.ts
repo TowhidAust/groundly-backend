@@ -11,9 +11,8 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ResponseType } from 'src/types';
-import { CreateUserDto } from './create-user.dto';
+import { CreateUserDto, LoginUserDto } from './auth.dto';
 import { HttpExceptionFilter } from 'src/exception-filters/http-exception.filter';
-import { LoginUserDto } from './login-user-dto';
 import { Request, Response } from 'express';
 import { AuthGuard } from './auth.guard';
 
@@ -21,20 +20,23 @@ import { AuthGuard } from './auth.guard';
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
   @Post('login')
-  async find(
+  async login(
     @Body() loginUser: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<ResponseType> {
     return this.authService.login(loginUser, res);
   }
+
   @Post('signup')
-  async create(
+  async createUser(
     @Body() createUser: CreateUserDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<ResponseType> {
     return this.authService.signup(createUser, res);
   }
+
   @Post('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
     const refreshToken = req.cookies['refreshToken'];
@@ -55,12 +57,10 @@ export class AuthController {
 
     return res.json({ accessToken: tokens.accessToken });
   }
+
   @UseGuards(AuthGuard)
-  @Get('profile')
+  @Get('profile/:id')
   getProfile(@Req() req: Request) {
-    return {
-      status: 200,
-      message: 'Successfully got profile',
-    };
+    return this.authService.getUser(req);
   }
 }

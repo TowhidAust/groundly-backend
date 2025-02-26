@@ -8,11 +8,10 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { User } from 'src/schema';
-import { ResponseType } from 'src/types';
-import { CreateUserDto } from './create-user.dto';
-import { LoginUserDto } from './login-user-dto';
+import { GetUserResponse, ResponseType, UserType } from 'src/types';
+import { CreateUserDto, LoginUserDto } from './auth.dto';
 import { JwtService } from '@nestjs/jwt';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 @Injectable()
 export class AuthService {
   constructor(
@@ -20,6 +19,7 @@ export class AuthService {
     private loginModel: mongoose.Model<User>,
     private jwtService: JwtService,
   ) {}
+
   async login(
     loginUserDto: LoginUserDto,
     res: Response,
@@ -128,6 +128,23 @@ export class AuthService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async getUser(req: Request): Promise<GetUserResponse> {
+    const userId: string = req.params.id;
+    const user = await this.loginModel.findById(userId).exec();
+    const userObj: UserType = {
+      _id: user._id.toString(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      roles: user.roles,
+    };
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Success',
+      data: userObj,
+    };
   }
 
   async generateTokens(payload: { userId: string; email: string }) {
